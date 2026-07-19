@@ -1,5 +1,6 @@
 // backend/server.js
 const express=require('express');
+const cors=require('cors');
 const dotenv=require('dotenv');
 const connectDB=require('./config/db');
 
@@ -8,20 +9,7 @@ connectDB();
 
 const app=express();
 
-// ── Manual CORS middleware (Express 5 compatible) ──
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-  // Immediately respond to preflight OPTIONS
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-  next();
-});
-
+app.use(cors());
 app.use(express.json());
 
 app.get('/',(req,res)=>{
