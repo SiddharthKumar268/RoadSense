@@ -1,0 +1,374 @@
+<!-- dashboard/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road Sense - Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="css/style.css?v=5">
+</head>
+<body>
+
+<!-- Dynamic Island Header -->
+<div class="island-wrapper">
+  <header class="island">
+    <div class="island-left">
+      <div class="island-logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#ig)" stroke-width="2.2" stroke-linecap="round"><defs><linearGradient id="ig" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#c4b5fd"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span class="island-name">Road Sense</span>
+      </div>
+    </div>
+    <div class="island-center">
+      <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+      <div class="island-time" id="islandTime"></div>
+    </div>
+    <div class="island-right">
+      <button id="logoutBtn" class="btn-logout">Logout</button>
+    </div>
+  </header>
+</div>
+
+<div id="toastContainer" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;max-width:340px;"></div>
+
+<main>
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-label">Total Events</div>
+      <div class="kpi-val" id="kpiTotal">-</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">High Severity (7+)</div>
+      <div class="kpi-val" id="kpiHighSeverity">-</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Active Hotspots</div>
+      <div class="kpi-val" id="kpiHotspots">-</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Severity</div>
+      <div class="kpi-val" id="kpiAvgSeverity">-</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Top Cause</div>
+      <div class="kpi-val" id="kpiTopCause" style="font-size:18px;">-</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Hotspot Map</div>
+    <div id="map"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Cause Distribution</div>
+      <canvas id="causeChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Severity Distribution</div>
+      <canvas id="severityChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Daily Trend</div>
+    <canvas id="trendChart"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Events by Hour of Day</div>
+      <canvas id="hourlyChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Top Risk Zones</div>
+      <div class="zone-list" id="zoneList"></div>
+    </div>
+  </div>
+
+  <!-- ═══ NEW: Safety Score + Activity Heatmap ═══ -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Driver Safety Score <span class="card-sub">Last 30 days</span></div>
+      <div id="safetyGauge" style="min-height:160px;display:flex;align-items:center;justify-content:center;">
+        <span style="color:var(--text3);font-size:13px;">Loading…</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Activity Heatmap <span class="card-sub">Day × Hour</span></div>
+      <canvas id="heatmapCanvas" style="width:100%;height:240px;"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ NEW: Week-over-Week + Severity Trend ═══ -->
+  <div class="grid-2">
+    <div class="card" id="wowContainer">
+      <div class="card-title">Week over Week <span id="wowBadge" class="card-sub"></span></div>
+      <canvas id="wowChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Severity Trend <span class="card-sub">Avg / Max / Min over time</span></div>
+      <canvas id="sevTrendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ NEW: Device Activity Monitor ═══ -->
+  <div class="card">
+    <div class="card-title">Device Activity Monitor <span class="card-sub">All registered Pi agents</span></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Device</th><th>Events</th><th>Avg Sev</th><th>Top Cause</th><th>Last Active</th></tr>
+        </thead>
+        <tbody id="deviceBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Recent Events</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Time</th><th>Cause</th><th>Severity</th><th>Device</th></tr>
+        </thead>
+        <tbody id="eventsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/map.js"></script>
+<script src="js/charts.js"></script>
+<script>
+if(!localStorage.getItem('token')){
+  window.location.href='index.html';
+}
+
+document.getElementById('logoutBtn').addEventListener('click',()=>{
+  localStorage.removeItem('token');
+  window.location.href='index.html';
+});
+
+function severityClass(sev){
+  if(sev>=7) return 'severity-high';
+  if(sev>=4) return 'severity-med';
+  return 'severity-low';
+}
+
+function renderEventsTable(events){
+  const body=document.getElementById('eventsBody');
+  body.innerHTML=events.map(e=>`
+    <tr>
+      <td>${new Date(e.timestamp).toLocaleString()}</td>
+      <td>${e.cause}</td>
+      <td class="${severityClass(e.severity)}">${e.severity}</td>
+      <td>${e.deviceId}</td>
+    </tr>
+  `).join('');
+}
+
+function renderZoneList(hotspots){
+  const top=[...hotspots].sort((a,b)=>b.score-a.score).slice(0,8);
+  const list=document.getElementById('zoneList');
+  list.innerHTML=top.map((h,i)=>`
+    <div class="zone-row">
+      <div class="zone-rank">#${i+1}</div>
+      <div class="zone-info">
+        <div class="zone-coords">${h.latitude.toFixed(5)}, ${h.longitude.toFixed(5)}</div>
+      </div>
+      <div>
+        <span class="zone-score">${h.score.toFixed(1)}</span>
+        <span class="zone-count">${h.eventCount} events</span>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text3);font-size:13px;">No hotspots yet — click refresh on backend or wait for cron.</div>';
+}
+
+/* ─── Enhanced Toast System ─── */
+const TOAST_DURATION = 5000;
+let toastCount = 0;
+
+function showToast(message, type='info', details=null){
+  const container = document.getElementById('toastContainer');
+  const id = 'toast-' + (++toastCount);
+
+  const icons = {
+    info:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+    success: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    error:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+    warning: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+  };
+
+  const colors = {
+    info:    {accent:'#8b5cf6', bg:'rgba(139,92,246,.08)',  border:'rgba(139,92,246,.30)'},
+    success: {accent:'#34d399', bg:'rgba(52,211,153,.08)',  border:'rgba(52,211,153,.30)'},
+    error:   {accent:'#f87171', bg:'rgba(248,113,113,.08)', border:'rgba(248,113,113,.30)'},
+    warning: {accent:'#f59e0b', bg:'rgba(245,158,11,.08)', border:'rgba(245,158,11,.30)'}
+  };
+
+  const c = colors[type] || colors.info;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  const toast = document.createElement('div');
+  toast.id = id;
+  toast.className = `toast ${type}`;
+  toast.style.cssText = `
+    pointer-events:all;display:flex;align-items:flex-start;gap:10px;
+    background:${c.bg};backdrop-filter:blur(20px);
+    border:1px solid ${c.border};border-left:3px solid ${c.accent};
+    border-radius:12px;padding:14px 16px;min-width:300px;max-width:360px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6), 0 0 20px ${c.accent}15;
+    color:#c8c8d0;font-family:Inter,sans-serif;font-size:13px;line-height:1.5;
+    opacity:0;transform:translateX(40px) scale(0.95);
+    transition:opacity .35s cubic-bezier(.4,0,.2,1), transform .35s cubic-bezier(.4,0,.2,1);
+    position:relative;overflow:hidden;
+  `;
+
+  let detailsHtml = '';
+  if(details){
+    detailsHtml = `<div style="margin-top:6px;padding-top:6px;border-top:1px solid ${c.border};font-size:11.5px;color:#9a9ab0;">
+      ${details}
+    </div>`;
+  }
+
+  toast.innerHTML = `
+    <span style="color:${c.accent};flex-shrink:0;margin-top:1px;">${icons[type] || icons.info}</span>
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <span style="font-weight:500;color:#e0e0ea;">${message}</span>
+        <button onclick="dismissToast('${id}')" style="flex-shrink:0;background:none;border:none;color:#6b6b80;cursor:pointer;padding:0;font-size:16px;line-height:1;transition:color .2s;" onmouseenter="this.style.color='#fff'" onmouseleave="this.style.color='#6b6b80'">&times;</button>
+      </div>
+      <div style="font-size:10.5px;color:#5a5a70;margin-top:3px;font-family:'JetBrains Mono',monospace;">${timeStr}</div>
+      ${detailsHtml}
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:${c.accent};animation:toastProgress ${TOAST_DURATION}ms linear forwards;transform-origin:left;"></div>
+  `;
+
+  container.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(()=>{
+    toast.style.opacity='1';
+    toast.style.transform='translateX(0) scale(1)';
+  });
+
+  // Auto-dismiss
+  const timer = setTimeout(()=> dismissToast(id), TOAST_DURATION);
+  toast.dataset.timer = timer;
+}
+
+function dismissToast(id){
+  const toast = document.getElementById(id);
+  if(!toast) return;
+  clearTimeout(Number(toast.dataset.timer));
+  toast.style.opacity='0';
+  toast.style.transform='translateX(40px) scale(0.95)';
+  setTimeout(()=> toast.remove(), 350);
+}
+
+/* ─── Dashboard Load + Polling ─── */
+let lastEventCount = null;
+let lastEventIds = new Set();
+
+async function loadDashboard(isPoll=false){
+  if(!isPoll) initMap();
+
+  try{ await authFetch('/hotspots/refresh',{method:'POST'}); }catch(e){}
+
+  // ── Core data (must succeed) ──
+  let stats, hotspots, recentEvents;
+  try {
+    [stats, hotspots, recentEvents] = await Promise.all([
+      getStats(),
+      getHotspots(),
+      getRecentEvents(300)
+    ]);
+  } catch(err) {
+    showToast('Failed to load dashboard data — check backend','error');
+    console.error('Core API error:', err);
+    return;
+  }
+
+  // ── Toast: new data check (runs EVERY poll) ──
+  if(isPoll && lastEventCount !== null){
+    const diff = stats.total.total - lastEventCount;
+    if(diff > 0){
+      const newEvents = recentEvents.filter(e => !lastEventIds.has(e._id)).slice(0, 3);
+      let detailLines = '';
+      if(newEvents.length > 0){
+        detailLines = newEvents.map(e =>
+          `<div style="display:flex;justify-content:space-between;gap:6px;">
+            <span>⚡ ${e.cause}</span>
+            <span style="color:${e.severity>=7?'#f87171':e.severity>=4?'#f59e0b':'#34d399'};font-weight:600;">Sev ${e.severity}</span>
+          </div>`
+        ).join('');
+      }
+      showToast(
+        `${diff} new event${diff>1?'s':''} detected!`,
+        diff >= 3 ? 'warning' : 'success',
+        detailLines || null
+      );
+    } else {
+      showToast('Database checked — no new events','info');
+    }
+  }
+
+  // Track for deduplication
+  lastEventCount = stats.total.total;
+  lastEventIds = new Set(recentEvents.map(e => e._id));
+
+  const avgSeverity = recentEvents.length
+    ? (recentEvents.reduce((s,e) => s + e.severity, 0) / recentEvents.length).toFixed(1)
+    : '-';
+
+  document.getElementById('kpiTotal').innerText = stats.total.total;
+  document.getElementById('kpiHighSeverity').innerText = stats.highSeverity.count;
+  document.getElementById('kpiHotspots').innerText = hotspots.length;
+  document.getElementById('kpiAvgSeverity').innerText = avgSeverity;
+  document.getElementById('kpiTopCause').innerText =
+    stats.causeDistribution.length ? stats.causeDistribution[0]._id : '-';
+
+  // Render existing charts
+  renderHotspots(hotspots);
+  renderCauseChart(stats.causeDistribution);
+  renderSeverityChart(recentEvents);
+  renderTrendChart(stats.dailyTrends);
+  renderHourlyChart(recentEvents);
+  renderZoneList(hotspots);
+  renderEventsTable(recentEvents.slice(0, 20));
+
+  // ── New analytics (fail gracefully — won't break dashboard) ──
+  try { const d = await getActivityHeatmap();   renderActivityHeatmap(d);     } catch(e){ console.warn('Heatmap API not available'); }
+  try { const d = await getWeekOverWeek();      renderWeekOverWeek(d);        } catch(e){ console.warn('WoW API not available'); }
+  try { const d = await getSafetyScore();       renderSafetyGauge(d);         } catch(e){ console.warn('Safety API not available'); }
+  try { const d = await getDeviceActivity();    renderDeviceTable(d);         } catch(e){ console.warn('Device API not available'); }
+  try { const d = await getSeverityTrend();     renderSeverityTrendChart(d);  } catch(e){ console.warn('SevTrend API not available'); }
+}
+
+loadDashboard(false);
+setInterval(()=>loadDashboard(true), 30000); // poll every 30s for more responsive updates
+
+if(localStorage.getItem('justLoggedIn')){
+  showToast('Welcome back — dashboard loaded successfully','success');
+  localStorage.removeItem('justLoggedIn');
+}
+
+// Dynamic Island live clock
+function updateIslandTime(){
+  const el=document.getElementById('islandTime');
+  if(el){
+    const now=new Date();
+    el.textContent=now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+}
+updateIslandTime();
+setInterval(updateIslandTime,1000);
+</script>
+</body>
+</html>

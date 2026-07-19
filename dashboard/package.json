@@ -1,0 +1,11 @@
+{
+  "name": "near-miss-tracker-dashboard",
+  "version": "1.0.0",
+  "main": "serve.js",
+  "scripts": {
+    "start": "node serve.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,66 @@
+<!-- dashboard/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road Sense - Login</title>
+<link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="logo-block">
+      <div class="logo-text">Road<span>Sense</span></div>
+      <div class="logo-sub">Hackcelerate - 2026</div>
+    </div>
+
+    <div class="auth-card">
+      <div class="card-title">Sign In</div>
+
+      <div id="errorBanner" class="banner error" style="display:none;"></div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="you@example.com">
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••">
+      </div>
+
+      <button class="btn-primary" id="loginBtn">Login</button>
+
+      <button class="btn-primary" id="registerBtn" style="margin-top:10px;background:transparent;border:1px solid var(--border2);box-shadow:none;color:var(--text2);">Register</button>
+    </div>
+
+    <div class="footer">Road Sense &middot; MERN</div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById('loginBtn').addEventListener('click',async()=>{
+      const email=document.getElementById('email').value;
+      const password=document.getElementById('password').value;
+      const errorBanner=document.getElementById('errorBanner');
+      errorBanner.style.display='none';
+
+      try{
+        const data=await loginUser(email,password);
+        localStorage.setItem('token',data.token);
+        localStorage.setItem('role',data.user.role);
+        localStorage.setItem('justLoggedIn','1');
+        window.location.href='dashboard.html';
+      }catch(err){
+        errorBanner.innerText=err.message;
+        errorBanner.style.display='block';
+      }
+    });
+
+    document.getElementById('registerBtn').addEventListener('click',()=>{
+      window.location.href='register.html';
+    });
+  </script>
+</body>
+</html>

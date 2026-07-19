@@ -1,0 +1,94 @@
+<!-- dashboard/register.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road Sense - Register</title>
+<link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="logo-block">
+      <div class="logo-text">Road<span>Sense</span></div>
+      <div class="logo-sub">Hotspot Analytics Dashboard</div>
+    </div>
+
+    <div class="auth-card">
+      <div class="card-title">Create Account</div>
+
+      <div id="errorBanner" class="banner error" style="display:none;"></div>
+      <div id="successBanner" class="banner success" style="display:none;"></div>
+
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="name" placeholder="Your name">
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="you@example.com">
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••">
+      </div>
+
+      <div class="field">
+        <label>Role</label>
+        <select id="role" style="width:100%;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:var(--mono);font-size:14px;">
+          <option value="driver">Driver</option>
+          <option value="manager">Manager</option>
+          <option value="official">Official</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" id="registerBtn">Register</button>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--text3);">
+      Already have an account?
+      <a href="index.html" style="color:var(--accent3);text-decoration:none;font-weight:600;">Sign in</a>
+    </div>
+
+    <div class="footer">Road Sense &middot; MERN</div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById('registerBtn').addEventListener('click',async()=>{
+      const name=document.getElementById('name').value;
+      const email=document.getElementById('email').value;
+      const password=document.getElementById('password').value;
+      const role=document.getElementById('role').value;
+
+      const errorBanner=document.getElementById('errorBanner');
+      const successBanner=document.getElementById('successBanner');
+      errorBanner.style.display='none';
+      successBanner.style.display='none';
+
+      try{
+        const res=await fetch(`${API_BASE}/auth/signup`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({name,email,password,role})
+        });
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.message||'Registration failed');
+
+        successBanner.innerText='Account registered successfully! Redirecting to login...';
+        successBanner.style.display='block';
+
+        setTimeout(()=>{
+          window.location.href='index.html';
+        },1500);
+      }catch(err){
+        errorBanner.innerText=err.message;
+        errorBanner.style.display='block';
+      }
+    });
+  </script>
+</body>
+</html>
