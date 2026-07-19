@@ -1,6 +1,5 @@
 // backend/server.js
 const express=require('express');
-const cors=require('cors');
 const dotenv=require('dotenv');
 const connectDB=require('./config/db');
 
@@ -9,16 +8,19 @@ connectDB();
 
 const app=express();
 
-// CORS — allow dashboard origins
-const corsOptions={
-  origin: true,
-  methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-};
-app.use(cors(corsOptions));
+// ── Manual CORS middleware (Express 5 compatible) ──
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  // Immediately respond to preflight OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
 
 app.use(express.json());
 
