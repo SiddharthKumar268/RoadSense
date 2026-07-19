@@ -1,9 +1,6 @@
 // dashboard/js/api.js
-// ── API Base URL ──
-// Local dev → localhost:5000  |  Render → update the URL below after deploying backend
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000/api'
-  : 'https://roadsense-ivlc.onrender.com/api';
+// Same domain — just use relative path
+const API_BASE = '/api';
 
 function getToken(){
   return localStorage.getItem('token');
